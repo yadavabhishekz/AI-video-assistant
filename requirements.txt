@@ -16,7 +16,9 @@ langchain
 langchain-core
 langchain-community
 langchain-mistralai      # LangChain wrapper for Mistral API
+langchain-groq     # LangChain wrapper for Gorq API
 mistralai                 # Official Mistral Python client
+groq
 
 # ── RAG Pipeline ──────────────────────────────────────────────────────────────
 chromadb                 # Local vector store

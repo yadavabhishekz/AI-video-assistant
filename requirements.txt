@@ -15,9 +15,7 @@ deep-translator         # Lightweight translation wrapper (Google backend)
 langchain
 langchain-core
 langchain-community
-langchain-mistralai      # LangChain wrapper for Mistral API
 langchain-groq     # LangChain wrapper for Gorq API
-mistralai                 # Official Mistral Python client
 groq
 
 # ── RAG Pipeline ──────────────────────────────────────────────────────────────

@@ -16,10 +16,7 @@ groq
 # ── RAG Pipeline ──────────────────────────────────────────────────────────────
 langchain-chroma            # LangChain ↔ Chroma vector store bridge
 chromadb                    # Local vector store
-sentence-transformers       # HuggingFace embedding models
-langchain-huggingface        # LangChain ↔ HuggingFace embeddings bridge
 langchain-google-genai
-huggingface-hub             # Model downloading from HuggingFace Hub
 tiktoken                    # Token counting for text splitting
 
 # ── Backend API ────────────────────────────────────────────────────────────────

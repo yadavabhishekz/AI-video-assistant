@@ -1,0 +1,12 @@
+.env
+.git
+.gitignore
+__pycache__/
+*.pyc
+vector_db/
+downloads/
+uploads/
+*.md
+.venv/
+venv/
+.vscode 

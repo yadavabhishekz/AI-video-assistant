@@ -25,6 +25,7 @@ from threading import Thread
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from utils.audio_processor import process_input
@@ -32,6 +33,7 @@ from core.transcriber import transcribe_all
 from core.summarizer import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 from core.rag_engine import build_rag_chain, ask_question
+from core.pdf_export import build_summary_pdf
 
 app = FastAPI(title="AI Meeting Assistant API")
 
@@ -107,6 +109,7 @@ def create_meeting(req: CreateMeetingRequest):
         "language": req.language,
         "result": None,
         "error": None,
+        "chat_history": [],
         "created_at": datetime.utcnow().isoformat(),
     }
     Thread(target=_process_meeting, args=(meeting_id, req.source, req.language), daemon=True).start()
@@ -128,6 +131,7 @@ def create_meeting_from_upload(file: UploadFile = File(...), language: str = For
         "language": language,
         "result": None,
         "error": None,
+        "chat_history": [],
         "created_at": datetime.utcnow().isoformat(),
     }
     Thread(target=_process_meeting, args=(meeting_id, tmp_path, language), daemon=True).start()
@@ -168,6 +172,23 @@ def delete_meeting(meeting_id: str):
         raise HTTPException(status_code=404, detail="Meeting not found")
     del MEETINGS[meeting_id]
     return {"deleted": meeting_id}
+
+
+@app.get("/meetings/{meeting_id}/export/summary")
+def export_summary_pdf(meeting_id: str):
+    meeting = MEETINGS.get(meeting_id)
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    if meeting["status"] != "done" or not meeting["result"]:
+        raise HTTPException(status_code=409, detail=f"Meeting not ready yet (status: {meeting['status']})")
+
+    pdf_bytes = build_summary_pdf(meeting["result"])
+    filename = f"recap-summary-{meeting_id[:8]}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/health")

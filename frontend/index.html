@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RECAP — AI Meeting Assistant</title>
+<title>Reel — AI Meeting Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -95,7 +95,7 @@
 <div class="wrap">
 
   <header>
-    <h1><span>RECAP</span> — AI Meeting Assistant</h1>
+    <h1><span>Reel</span> — AI Meeting Assistant</h1>
     <div class="tag">transcribe · summarize · decide</div>
   </header>
 
@@ -129,7 +129,7 @@
         <button id="run-btn" onclick="startJob()">Run pipeline</button>
       </div>
     </div>
-    <div class="dim-note">Talks to your local FastAPI backend at <code>http://localhost:8000</code>.</div>
+    <div class="dim-note">Talks to the RECAP backend running this page.</div>
   </section>
 
   <section class="panel hidden" id="progress-panel">
@@ -140,7 +140,10 @@
 
   <section class="panel hidden" id="results-panel">
     <h2>Meeting summary</h2>
-    <div class="result-title" id="result-title"></div>
+    <div class="row" style="align-items:baseline; justify-content:space-between;">
+      <div class="result-title" id="result-title"></div>
+      <button class="ghost" id="download-summary-btn" onclick="downloadSummaryPdf()">Download summary PDF</button>
+    </div>
     <div class="panel" style="margin-top:14px;">
       <h2>Summary</h2>
       <div id="result-summary" style="font-size:13.5px; line-height:1.6;"></div>
@@ -293,10 +296,35 @@ async function pollMeeting(){
   }
 }
 
+function parseExtractedItems(raw){
+  // Handles model output like:
+  // "Here are the key decisions made: 1. First thing. 2. Second thing."
+  // by stripping the preamble and splitting on numbered markers.
+  if (Array.isArray(raw)) return raw.flatMap(parseExtractedItems);
+  if (typeof raw !== "string") return raw ? [raw] : [];
+
+  let text = raw.trim();
+  if (!text) return [];
+
+  // Drop a leading "Here are the ...:" / "Here's ...:" preamble sentence.
+  const preambleMatch = text.match(/^(here('?s| are)[^:]{0,120}:)\s*/i);
+  if (preambleMatch) text = text.slice(preambleMatch[0].length);
+
+  // Split on "1. ", "2. " etc. (numbered list markers).
+  const numbered = text.split(/(?:(?<=^)|(?<=\s))\d+\.\s+/).map(s => s.trim()).filter(Boolean);
+  if (numbered.length > 1) return numbered;
+
+  // Fall back: split on "* " bullet markers.
+  const starred = text.split(/(?:(?<=^)|(?<=\s))\*\s+/).map(s => s.trim()).filter(Boolean);
+  if (starred.length > 1) return starred;
+
+  return [text];
+}
+
 function fillList(id, items){
   const ul = document.getElementById(id);
   ul.innerHTML = "";
-  const arr = Array.isArray(items) ? items : (items ? [items] : []);
+  const arr = parseExtractedItems(items);
   if (arr.length === 0) {
     ul.innerHTML = `<li style="color:var(--ink-dim);">None found.</li>`;
     return;
@@ -308,16 +336,40 @@ function fillList(id, items){
   });
 }
 
+function fillSummary(raw){
+  const container = document.getElementById("result-summary");
+  const items = parseExtractedItems(raw);
+  if (items.length > 1) {
+    const ul = document.createElement("ul");
+    ul.className = "extract";
+    ul.style.margin = "0";
+    items.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+    container.innerHTML = "";
+    container.appendChild(ul);
+  } else {
+    container.textContent = items[0] || "—";
+  }
+}
+
 function renderResult(result){
   document.getElementById("results-panel").classList.remove("hidden");
   document.getElementById("chat-panel").classList.remove("hidden");
   document.getElementById("result-title").textContent = result.title || "Untitled recording";
-  document.getElementById("result-summary").textContent = result.summary || "—";
+  fillSummary(result.summary);
   fillList("result-actions", result.action_items);
   fillList("result-decisions", result.key_decisions);
   fillList("result-questions", result.open_questions);
   document.getElementById("result-transcript").textContent = result.transcript || "";
   document.getElementById("chat-log").innerHTML = "";
+}
+
+function downloadSummaryPdf(){
+  if (!meetingId) return;
+  window.open(`${API_BASE}/meetings/${meetingId}/export/summary`, "_blank");
 }
 
 async function sendChat(){

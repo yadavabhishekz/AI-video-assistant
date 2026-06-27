@@ -31,10 +31,25 @@ def download_youtube_audio(url: str) -> str:
 
 
 def convert_to_wav(input_path: str) -> str:
+    print("=== convert_to_wav START ===")
+
+    print(f"Input path: {input_path}")
+    print(f"Exists: {os.path.exists(input_path)}")
+
     output_path = os.path.splitext(input_path)[0] + "_converted.wav"
+
+    print("Loading audio...")
     audio = AudioSegment.from_file(input_path)
+
+    print("Audio loaded")
+
     audio = audio.set_channels(1).set_frame_rate(16000)
+
+    print("Exporting WAV...")
     audio.export(output_path, format="wav")
+
+    print("WAV export complete")
+
     return output_path
 
 

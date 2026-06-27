@@ -30,3 +30,6 @@ python-multipart             # Required for file uploads (UploadFile / Form)
 python-dotenv               # Load API keys from .env
 numpy
 tqdm                        # Progress bars
+
+
+reportlab

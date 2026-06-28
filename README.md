@@ -5,6 +5,12 @@
 
 ---
 
+# Demo Video
+
+https://www.loom.com/share/90de82b0cac647ef9a641d81eb24bbba
+
+---
+
 ## What it does
 
 RECAP is a full-stack AI pipeline that ingests any video or audio source, extracts a full transcript, and runs a suite of LLM-powered analyses on it:

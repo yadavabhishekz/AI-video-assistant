@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RECAP — AI Meeting Assistant</title>
+<title>RECAP— AI Meeting Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -78,6 +78,8 @@
   .result-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .result-grid .panel{ margin-bottom:0; }
   ul.extract{ margin:0; padding-left:18px; font-size:13px; line-height:1.6; color:var(--ink);}
+  ul.extract li{ margin-bottom:10px; }
+  ul.extract li:last-child{ margin-bottom:0; }
   .transcript-box{ max-height:220px; overflow-y:auto; font-size:12.5px; line-height:1.6; color:var(--ink-dim); white-space:pre-wrap; background:#0f0e0c; border-radius:6px; padding:14px; border:1px solid var(--line);}
 
   .chat-log{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; max-height:340px; overflow-y:auto; }
@@ -321,6 +323,25 @@ function parseExtractedItems(raw){
   return [text];
 }
 
+function formatItemHtml(item){
+  let text = String(item);
+
+  // Strip markdown bold/italic markers (**Task description**: ...)
+  text = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
+
+  // Break "Task description: X - Owner: Y - Deadline: Z" into separate lines.
+  const fieldPattern = /\s-\s(?=(Task description|Owner|Deadline)\s*:)/gi;
+  if (fieldPattern.test(text)) {
+    const parts = text.split(fieldPattern).filter(Boolean);
+    return parts
+      .map(p => p.trim())
+      .map(p => p.replace(/^(Task description|Owner|Deadline)\s*:\s*/i, (m, label) => `<strong>${label}:</strong> `))
+      .join("<br>");
+  }
+
+  return text.trim();
+}
+
 function fillList(id, items){
   const ul = document.getElementById(id);
   ul.innerHTML = "";
@@ -331,7 +352,7 @@ function fillList(id, items){
   }
   arr.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = typeof item === "string" ? item : JSON.stringify(item);
+    li.innerHTML = formatItemHtml(item);
     ul.appendChild(li);
   });
 }

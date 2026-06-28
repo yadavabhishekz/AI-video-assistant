@@ -68,13 +68,33 @@ def parse_extracted_items(raw):
     return _split_numbered_or_starred(raw)
 
 
+def _format_item_html(item: str) -> str:
+    text = str(item)
+    # Strip markdown bold/italic markers
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+    text = re.sub(r"(?<!\*)\*(.*?)\*(?!\*)", r"\1", text)
+
+    parts = re.split(r"\s-\s(?=(?:Task description|Owner|Deadline)\s*:)", text, flags=re.IGNORECASE)
+    if len(parts) > 1:
+        formatted = []
+        for p in parts:
+            p = p.strip()
+            m = re.match(r"^(Task description|Owner|Deadline)\s*:\s*(.*)$", p, flags=re.IGNORECASE)
+            if m:
+                formatted.append(f"<b>{m.group(1)}:</b> {m.group(2)}")
+            else:
+                formatted.append(p)
+        return "<br/>".join(formatted)
+    return text.strip()
+
+
 def _bullet_section(story, heading, items):
     story.append(Paragraph(heading, heading_style))
     items = parse_extracted_items(items)
     if not items:
         story.append(Paragraph("None found.", body_style))
         return
-    bullets = [ListItem(Paragraph(str(item), body_style)) for item in items]
+    bullets = [ListItem(Paragraph(_format_item_html(item), body_style)) for item in items]
     story.append(ListFlowable(bullets, bulletType="bullet", leftIndent=14))
 
 
